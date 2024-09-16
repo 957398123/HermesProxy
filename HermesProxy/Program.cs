@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
@@ -15,9 +15,11 @@ public class Program
 {
     public static int Main(string[] args)
     {
+        // 设置固定的CultureInfo
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
+        // 构建命令行支持
         var commandTree = new RootCommand("Hermes Proxy: Allows you to play on legacy WoW server with modern client")
         {
             CommandLineArgumentsTemplate.ConfigFileLocation,
@@ -25,10 +27,12 @@ public class Program
             CommandLineArgumentsTemplate.OverwrittenConfigValues,
         };
 
+        // 构建命令行解析器
         var parser = new CommandLineBuilder(commandTree)
             .UseDefaults()
             .Build();
 
+        // 设置命令行参数处理
         commandTree.SetHandler((ctx) =>
         {
             var result = ctx.ParseResult;
@@ -38,13 +42,15 @@ public class Program
                 DisableVersionCheck = result.GetValueForOption(CommandLineArgumentsTemplate.DisableVersionCheck),
                 OverwrittenConfigValues = ParseMultiArgument(result.GetValueForOption(CommandLineArgumentsTemplate.OverwrittenConfigValues)),
             };
+            // 启动Server
             Server.ServerMain(commandLineArguments);
         });
 
+        // 处理参数
         int exitCode = 1;
         try
         {
-             exitCode = parser.Invoke(args);
+            exitCode = parser.Invoke(args);
         }
         catch (Exception e)
         {
@@ -145,7 +151,7 @@ internal static class OsSpecific
     [DllImport("kernel32.dll")]
     static extern IntPtr GetConsoleWindow();
 
-    [DllImport("user32.dll", SetLastError=true)]
+    [DllImport("user32.dll", SetLastError = true)]
     static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
 #endif
 }

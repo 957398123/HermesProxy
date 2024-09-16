@@ -33,11 +33,12 @@ namespace HermesProxy
             }
             catch { /* ignore */ }
 #endif
-
+            // 输出版本信息
             Log.Print(LogType.Server, "Starting Hermes Proxy...");
             Log.Print(LogType.Server, $"Version {GetVersionInformation()}");
             Log.Start();
 
+            // 如果当前工作目录不是exe文件所在目录，切换工作目录为当前exe目录
             if (Environment.CurrentDirectory != Path.GetDirectoryName(AppContext.BaseDirectory))
             {
                 Log.Print(LogType.Storage, "Switching working directory");
@@ -46,7 +47,7 @@ namespace HermesProxy
                 Log.Print(LogType.Storage, $"New: {Environment.CurrentDirectory}");
                 Thread.Sleep(TimeSpan.FromSeconds(1));
             }
-
+            // 解析配置
             ConfigurationParser config;
             try
             {
@@ -57,6 +58,7 @@ namespace HermesProxy
                 Log.Print(LogType.Error, "Config loading failed");
                 return;
             }
+            // 校验配置
             if (!Settings.LoadAndVerifyFrom(config))
             {
                 Log.Print(LogType.Error, "The verification of the config failed");
@@ -64,7 +66,7 @@ namespace HermesProxy
             }
             Log.DebugLogEnabled = Settings.DebugOutput;
             Log.Print(LogType.Debug, "Debug logging enabled");
-
+            // 是否支持AES
             if (!AesGcm.IsSupported)
             {
                 Log.Print(LogType.Error, "AesGcm is not supported on your platform");
@@ -80,8 +82,10 @@ namespace HermesProxy
             Log.Print(LogType.Server, $"Modern (Client) Build: {Settings.ClientBuild}");
             Log.Print(LogType.Server, $"Legacy (Server) Build: {Settings.ServerBuild}");
 
+            // 加载游戏数据
             GameData.LoadEverything();
 
+            // 如果不是回环地址，绑定所有IP地址
             var bindIp = NetworkUtils.ResolveOrDirectIPv64(Settings.ExternalAddress);
             if (!IPAddress.IsLoopback(bindIp))
                 bindIp = IPAddress.Any; // If we are not listening on localhost we have to expose our services
@@ -102,11 +106,12 @@ namespace HermesProxy
             // 4. Start the listener for world connections
             var worldSocketServer = StartServer<WorldSocket>(new IPEndPoint(bindIp, Settings.InstancePort));
 
+            // 只要监听的端口存在，不停止
             while (restSocketServer.IsListening || bnetSocketServer.IsListening || realmSocketServer.IsListening || worldSocketServer.IsListening)
             {
                 Thread.Sleep(TimeSpan.FromSeconds(10));
             }
-
+            // 输出运行状态
             Console.WriteLine($"(restSocketServer.IsListening: {restSocketServer.IsListening}");
             Console.WriteLine($"(bnetSocketServer.IsListening: {bnetSocketServer.IsListening}");
             Console.WriteLine($"(realmSocketServer.IsListening: {realmSocketServer.IsListening}");
